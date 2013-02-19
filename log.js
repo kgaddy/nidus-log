@@ -17,12 +17,19 @@ var url = require('url');
 
 var server = http.createServer(function(request, response) {
     var urlObj = url.parse(request.url, true);
-    //var id = urlObj.query.id;
+    var date = urlObj.query.date;
+	var code = urlObj.query.code;
+	var descr = urlObj.query.descr;
+	var ip = request.headers['user-agent'];
+	var value = urlObj.query.value;
+	var refId = urlObj.query.refId;
     var output = urlObj.query.output;
-    //var user = 'kgaddy';
+
     request.addListener('end',
     function() {
-		console.log(urlObj)
+		var log = new Log(date,code,descr,ip,value,refId);
+		console.log(log)
+		log.logValue();
 		//var serviceid = id;
  		//mock.getData(serviceid,response,request,output);
     });
@@ -33,59 +40,53 @@ console.log('Log Server Started:8001')
 
 var Log = (function () {
     function Log(date,code,description,ip,value,refId) {
-        this.Date = date;
+        this.DateLog = date;
 		this.Code = code
 		this.Description = description;
 		this.IPAddress = ip;
 		this.Value = value;
 		this.RefId = refId;
     }
+
     Log.prototype.logValue = function () {
+			var that=this;
 	    //check the connection. If connected move on, else make the connection.
-	    //if (client.connected === false) {
-	   //         ClientConnectionReady(client);
-	   // }
-	  //  else
-	  //  {
-	    //    ClientConnectionReady(client);
-	  //  }
+	    if (connection.connected === false) {
+	            ClientConnectionReady(connection);
+	    }
+	    else
+	    {
+	        ClientConnectionReady(connection);
+	   }
 	  
 	  connection.connect(function(err) {
 		  console.log('connected')
 	    // connected! (unless `err` is set)
 	  });
 
-	    function ClientConnectionReady(client)
+	    function ClientConnectionReady(connection)
 	    {
-	        client.query('USE mockJSON',
+	        connection.query('USE Log',
 	        function(error, results) {
 	            if (error) {
 	                console.log('ClientConnectionReady Error: ' + error.message);
-	                client.end();
+	                connection.end();
 	                return;
 	            }
-	            ClientReady(client);
+	            ClientReady(connection);
 	        });
 	    };
 
-	    function ClientReady(client)
+	    function ClientReady(connection)
 	    {
-	        var userAgent = request.headers['user-agent'];
-	        var svcId;
-
-	        if (serviceid)
-	        {
-	            svcId = serviceid;
-	        }
-	        else {
-	            svcId = 0;
-	        }
-	        var values = [this.Date, this.Code, this.Description, this.IPAddress,this.Value,this.RefId];
-	        client.query('INSERT INTO log SET date = ? , code = ? , description =? , value=?, refId=?', values,
+	
+	        var values = [that.DateLog, that.Code, that.Description, that.IPAddress,that.Value,that.RefId];
+			console.log(values);
+	        connection.query('INSERT INTO log SET date = ? , code = ? , description =? , ipAddress = ?, value=?, refId=?', values,
 	        function(error, results) {
 	            if (error) {
 	                console.log("ClientReady Error: " + error.message);
-	                client.end();
+	                connection.end();
 	                return;
 	            }
 
