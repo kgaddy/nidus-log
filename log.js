@@ -1,8 +1,27 @@
-var config = require('./config.js');
-//var client = new require("mysql");
-//client.createClient({host:'localhost',port:config.MYSQLport,user: config.MYSQLusername,password:config.MYSQLpassword,database: config.MYSQLdbname});
+var config 	= require('./config.js'),
+	http 	= require('http'),
+	sys 	= require ('util'),
+	url 	= require('url'),
+	mysql	= require('mysql');
+	
+var server = http.createServer(function(request, response) {
+	var urlObj = url.parse(request.url, true),
+		date = urlObj.query.date,
+		code = urlObj.query.code,
+		descr = urlObj.query.descr,
+		ip = request.headers['user-agent'],
+		value = urlObj.query.value,
+		refId = urlObj.query.refId,
+	    output = urlObj.query.output;
 
-var mysql      = require('mysql');
+	request.addListener('end',function() {
+		var log = new Log(date,code,descr,ip,value,refId);
+		log.logValue();
+	    });
+}).listen(8001);
+console.log('Log Server Started:8001')
+	
+//connect to mysql	
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : config.MYSQLusername,
@@ -10,33 +29,6 @@ var connection = mysql.createConnection({
   port : config.MYSQLport,
   database: config.MYSQLdbname
 });
-
-var http = require('http');
-var sys = require ('util');
-var url = require('url');
-
-var server = http.createServer(function(request, response) {
-    var urlObj = url.parse(request.url, true);
-    var date = urlObj.query.date;
-	var code = urlObj.query.code;
-	var descr = urlObj.query.descr;
-	var ip = request.headers['user-agent'];
-	var value = urlObj.query.value;
-	var refId = urlObj.query.refId;
-    var output = urlObj.query.output;
-
-    request.addListener('end',
-    function() {
-		var log = new Log(date,code,descr,ip,value,refId);
-		console.log(log)
-		log.logValue();
-		//var serviceid = id;
- 		//mock.getData(serviceid,response,request,output);
-    });
-}).listen(8001);
-console.log('Log Server Started:8001')
-
-
 
 var Log = (function () {
     function Log(date,code,description,ip,value,refId) {
@@ -47,16 +39,15 @@ var Log = (function () {
 		this.Value = value;
 		this.RefId = refId;
     }
-
     Log.prototype.logValue = function () {
-			var that=this;
+		var that=this;
 	    //check the connection. If connected move on, else make the connection.
 	    if (connection.connected === false) {
-	            ClientConnectionReady(connection);
+			ClientConnectionReady(connection);
 	    }
 	    else
 	    {
-	        ClientConnectionReady(connection);
+			ClientConnectionReady(connection);
 	   }
 	  
 	  connection.connect(function(err) {
@@ -64,36 +55,33 @@ var Log = (function () {
 	    // connected! (unless `err` is set)
 	  });
 
-	    function ClientConnectionReady(connection)
-	    {
-	        connection.query('USE Log',
-	        function(error, results) {
-	            if (error) {
-	                console.log('ClientConnectionReady Error: ' + error.message);
-	                connection.end();
-	                return;
-	            }
-	            ClientReady(connection);
-	        });
-	    };
+	  function ClientConnectionReady(connection)
+	  {
+		  connection.query('USE Log',
+		  function(error, results) {
+			  if (error) {
+				  console.log('ClientConnectionReady Error: ' + error.message);
+				  connection.end();
+				  return;
+			  }
+			  ClientReady(connection);
+		  });
+	  };
 
-	    function ClientReady(connection)
-	    {
-	
-	        var values = [that.DateLog, that.Code, that.Description, that.IPAddress,that.Value,that.RefId];
-			console.log(values);
-	        connection.query('INSERT INTO log SET date = ? , code = ? , description =? , ipAddress = ?, value=?, refId=?', values,
-	        function(error, results) {
-	            if (error) {
-	                console.log("ClientReady Error: " + error.message);
-	                connection.end();
-	                return;
-	            }
-
-	        });
-	    }
-    };
-    return Log;
+	  function ClientReady(connection)
+	  {
+		  var values = [that.DateLog, that.Code, that.Description, that.IPAddress,that.Value,that.RefId];
+		  connection.query('INSERT INTO log SET date = ? , code = ? , description =? , ipAddress = ?, value=?, refId=?', values,
+		  function(error, results) {
+			  if (error) {
+				  console.log("ClientReady Error: " + error.message);
+				  connection.end();
+				  return;
+			  }
+		  });
+	  }
+	};
+	return Log;
 })();
 
 
