@@ -5,19 +5,37 @@ var config 	= require('./config.js'),
 	mysql	= require('mysql');
 	
 var server = http.createServer(function(request, response) {
-	var urlObj = url.parse(request.url, true),
-		date = urlObj.query.date,
-		code = urlObj.query.code,
-		descr = urlObj.query.descr,
-		ip = request.headers['user-agent'],
-		value = urlObj.query.value,
-		refId = urlObj.query.refId,
-	    output = urlObj.query.output;
-
+	var parts = url.parse(request.headers['host'], true);
+	var date,code,descr,ip,value,refId,output,urlObj;
+	if(urlObj!=null){
+		urlObj = url.parse(request.url, true),
+		date   = urlObj.query.date,
+		code   = urlObj.query.code,
+		descr  = urlObj.query.descr,
+		ip     = request.headers['user-agent'],
+		value  = urlObj.query.value,
+		refId  = urlObj.query.refId,
+		output = urlObj.query.output;
+	}
+	else{
+		date   = parts['query'].date;
+		code   = parts['query'].code;
+		descr  = parts['query'].descr;
+		ip     = "";
+		value  = parts['query'].value;
+		refId  = parts['query'].refId;	
+	}
+	
+	if(date==='' || date == null){
+		var now = new Date();
+		//now.format("dd/M/yy h:mm tt"); //Edit: changed TT to tt
+		date=now;
+	}
+		
 	request.addListener('end',function() {
 		var log = new Log(date,code,descr,ip,value,refId);
 		log.logValue();
-	    });
+	});
 }).listen(8001);
 console.log('Log Server Started:8001')
 	
@@ -39,33 +57,30 @@ var Log = (function () {
 		this.Value = value;
 		this.RefId = refId;
     }
-    Log.prototype.logValue = function () {
+	Log.prototype.logValue = function () {
 		var that=this;
-	    //check the connection. If connected move on, else make the connection.
-	    if (connection.connected === false) {
-			ClientConnectionReady(connection);
-	    }
-	    else
-	    {
-			ClientConnectionReady(connection);
-	   }
-	  
-	  connection.connect(function(err) {
-		  console.log('connected')
+		connection.connect(function(err) {
+		console.log('connected');
+		ClientConnectionReady(connection);
 	    // connected! (unless `err` is set)
 	  });
 
 	  function ClientConnectionReady(connection)
 	  {
-		  connection.query('USE Log',
-		  function(error, results) {
-			  if (error) {
-				  console.log('ClientConnectionReady Error: ' + error.message);
-				  connection.end();
-				  return;
-			  }
-			  ClientReady(connection);
-		  });
+		  try{
+			  connection.query('USE Log',
+			  function(error, results) {
+				  if (error) {
+					  console.log('ClientConnectionReady Error: ' + error.message);
+					  //connection.end();
+					  return;
+				  }
+				  ClientReady(connection);
+			  });
+		  }
+		  catch(err){
+			  console.log(err)
+		  }
 	  };
 
 	  function ClientReady(connection)
@@ -75,7 +90,7 @@ var Log = (function () {
 		  function(error, results) {
 			  if (error) {
 				  console.log("ClientReady Error: " + error.message);
-				  connection.end();
+				  //connection.end();
 				  return;
 			  }
 		  });
@@ -83,68 +98,4 @@ var Log = (function () {
 	};
 	return Log;
 })();
-
-
-/*
-
-exports.logService = function(request, userName, serviceid, numberOfRows) {
-
-
-
-
-
-
-
-
-
-
-
-    //check the connection. If connected move on, else make the connection.
-    if (client.connected === false) {
-            ClientConnectionReady(client);
-    }
-    else
-    {
-        ClientConnectionReady(client);
-    }
-
-    function ClientConnectionReady(client)
-    {
-        client.query('USE mockJSON',
-        function(error, results) {
-            if (error) {
-                console.log('ClientConnectionReady Error: ' + error.message);
-                client.end();
-                return;
-            }
-            ClientReady(client);
-        });
-    };
-
-    function ClientReady(client)
-    {
-        var userAgent = request.headers['user-agent'];
-        var svcId;
-
-        if (serviceid)
-        {
-            svcId = serviceid;
-        }
-        else {
-            svcId = 0;
-        }
-        var values = [userName, userAgent, svcId,numberOfRows];
-        client.query('INSERT INTO Service_Log SET user = ? , userAgent = ? , serviceId =? , numberOfRows=?', values,
-        function(error, results) {
-            if (error) {
-                console.log("ClientReady Error: " + error.message);
-                client.end();
-                return;
-            }
-
-        });
-    }
-}
-*/
-
 
