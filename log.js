@@ -9,7 +9,6 @@ var server = http.createServer(function(request, response) {
 	var date, code, descr, ip, value, refId, output, urlObj;
 	var urlObj = url.parse(request.url, true);
 
-	console.log(parts['query']);
 	if (urlObj.query.code != null) {
 		urlObj = url.parse(request.url, true),
 		date = urlObj.query.date,
@@ -41,12 +40,13 @@ var server = http.createServer(function(request, response) {
 		value = '';
 	}
 
-	request.addListener('end', function() {
+	request.on('end', function() {
 		var log = new Log(date, code, descr, ip, value, refId);
 		log.logValue();
 	});
-}).listen(8002);
-console.log('Log Server Started:8002')
+	request.resume();
+}).listen(8001);
+console.log('Log Server Started:8001')
 
 //connect to mysql	
 var connection = mysql.createConnection({
