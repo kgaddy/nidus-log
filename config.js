@@ -1,16 +1,9 @@
 //MySQL
 
 //dev
-exports.MYSQLusername='root';
+exports.MYSQLusername='your mysql username';
 exports.MYSQLdbname='Log';
 exports.MYSQLhost='';
-exports.MYSQLpassword='root';
+exports.MYSQLpassword='you mysql password';
 exports.MYSQLport='8889';
-/*
-//prod
-exports.MYSQLusername='root';
-exports.MYSQLdbname='mockJSON';
-exports.MYSQLhost='';
-exports.MYSQLpassword='hellcat';
-exports.MYSQLport='3306';
-*/
+
